@@ -1,5 +1,13 @@
 import { ArrowLeft, Navigation, Zap, Clock, DollarSign, MapPin, Wifi, Car, Coffee } from 'lucide-react'
 
+// Sanitize text to prevent XSS
+const sanitizeText = (text: string | number): string => {
+  const str = String(text)
+  const div = document.createElement('div')
+  div.textContent = str
+  return div.innerHTML
+}
+
 interface ChargingStation {
   id: string
   name: string
@@ -30,7 +38,9 @@ export default function StationDetails({ station, onStartCharging, onBack }: Sta
   }
 
   const getAmenityIcon = (amenity: string) => {
-    switch (amenity.toLowerCase()) {
+    // Sanitize amenity input before checking
+    const safeAmenity = sanitizeText(amenity).toLowerCase()
+    switch (safeAmenity) {
       case 'wifi': return <Wifi size={16} />
       case 'restaurant': case 'food court': return <Coffee size={16} />
       case 'restroom': return <MapPin size={16} />
@@ -40,7 +50,18 @@ export default function StationDetails({ station, onStartCharging, onBack }: Sta
   }
 
   const handleGetDirections = () => {
-    const url = `https://maps.google.com/?q=${station.lat},${station.lng}`
+    // Validate coordinates to prevent XSS via URL injection
+    const lat = parseFloat(String(station.lat))
+    const lng = parseFloat(String(station.lng))
+
+    // Check if coordinates are valid numbers and within valid ranges
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      console.error('Invalid coordinates')
+      return
+    }
+
+    // Use encodeURIComponent to safely encode coordinates
+    const url = `https://maps.google.com/?q=${encodeURIComponent(lat)},${encodeURIComponent(lng)}`
     window.open(url, '_blank')
   }
 
@@ -58,12 +79,12 @@ export default function StationDetails({ station, onStartCharging, onBack }: Sta
       <div className="details-card">
         <div className="station-main-info">
           <div className="station-title-section">
-            <h1 className="station-title">{station.name}</h1>
+            <h1 className="station-title" dangerouslySetInnerHTML={{ __html: sanitizeText(station.name) }} />
             <span className={`status-pill ${getStatusColor(station.status)}`}>
-              {station.status.charAt(0).toUpperCase() + station.status.slice(1)}
+              {sanitizeText(station.status.charAt(0).toUpperCase() + station.status.slice(1))}
             </span>
           </div>
-          <p className="station-location">{station.address}</p>
+          <p className="station-location" dangerouslySetInnerHTML={{ __html: sanitizeText(station.address) }} />
         </div>
 
         {/* Availability and Cost */}
@@ -103,12 +124,15 @@ export default function StationDetails({ station, onStartCharging, onBack }: Sta
         <div className="amenities-section">
           <h3 className="amenities-title">Amenities</h3>
           <div className="amenities-grid">
-            {station.amenities.map((amenity, index) => (
-              <div key={index} className="amenity-item">
-                {getAmenityIcon(amenity)}
-                <span>{amenity}</span>
-              </div>
-            ))}
+            {station.amenities.map((amenity, index) => {
+              const safeAmenity = sanitizeText(amenity)
+              return (
+                <div key={index} className="amenity-item">
+                  {getAmenityIcon(amenity)}
+                  <span dangerouslySetInnerHTML={{ __html: safeAmenity }} />
+                </div>
+              )
+            })}
           </div>
         </div>
 

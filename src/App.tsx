@@ -76,7 +76,24 @@ function App() {
   }
 
   const handleQRScan = (result: string) => {
-    console.log('QR Code scanned:', result)
+    // Validate QR code format to prevent XSS
+    // Expected format: EV-STATION-XXX-PORT-X or similar alphanumeric with hyphens
+    const qrCodePattern = /^[A-Z0-9\-]+$/i
+
+    if (!result || typeof result !== 'string') {
+      console.error('Invalid QR code: empty or non-string value')
+      return
+    }
+
+    // Sanitize the result by removing any potentially dangerous characters
+    const sanitizedResult = result.replace(/[^A-Za-z0-9\-]/g, '')
+
+    if (!qrCodePattern.test(sanitizedResult)) {
+      console.error('Invalid QR code format:', sanitizedResult)
+      return
+    }
+
+    console.log('QR Code scanned:', sanitizedResult)
     setIsCharging(true)
     setCurrentView('map')
   }

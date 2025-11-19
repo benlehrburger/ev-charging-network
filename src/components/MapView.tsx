@@ -33,23 +33,49 @@ L.Icon.Default.mergeOptions({
 
 // Custom icons for different station statuses
 const createStationIcon = (status: string) => {
-  const color = status === 'available' ? '#10B981' :
-                status === 'busy' ? '#F59E0B' : '#EF4444'
+  // Whitelist valid status values to prevent injection
+  const validStatuses = ['available', 'busy', 'offline']
+  const safeStatus = validStatuses.includes(status) ? status : 'offline'
+
+  const color = safeStatus === 'available' ? '#10B981' :
+                safeStatus === 'busy' ? '#F59E0B' : '#EF4444'
+
+  // Use DOM API instead of HTML string to prevent injection
+  const markerDiv = document.createElement('div')
+  markerDiv.style.backgroundColor = color
+  markerDiv.style.width = '30px'
+  markerDiv.style.height = '30px'
+  markerDiv.style.borderRadius = '50%'
+  markerDiv.style.border = '3px solid white'
+  markerDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)'
 
   return L.divIcon({
     className: 'custom-marker',
-    html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+    html: markerDiv.outerHTML,
     iconSize: [30, 30],
     iconAnchor: [15, 15],
   })
 }
 
-const userIcon = L.divIcon({
-  className: 'custom-marker',
-  html: `<div style="background-color: #3B82F6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-  iconSize: [20, 20],
-  iconAnchor: [10, 10],
-})
+// Create user location icon safely
+const createUserIcon = () => {
+  const userDiv = document.createElement('div')
+  userDiv.style.backgroundColor = '#3B82F6'
+  userDiv.style.width = '20px'
+  userDiv.style.height = '20px'
+  userDiv.style.borderRadius = '50%'
+  userDiv.style.border = '3px solid white'
+  userDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)'
+
+  return L.divIcon({
+    className: 'custom-marker',
+    html: userDiv.outerHTML,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  })
+}
+
+const userIcon = createUserIcon()
 
 // Component to handle map centering
 function MapController({ center }: { center: [number, number] }) {
@@ -58,6 +84,31 @@ function MapController({ center }: { center: [number, number] }) {
     map.flyTo(center, 13)
   }, [center, map])
   return null
+}
+
+// Sanitize text to prevent XSS in displayed content
+const sanitizeText = (text: string | number): string => {
+  // Convert to string and remove any HTML tags and dangerous characters
+  const str = String(text)
+  const div = document.createElement('div')
+  div.textContent = str
+  return div.innerHTML
+}
+
+// Validate station data to ensure safety
+const validateStation = (station: ChargingStation): boolean => {
+  return (
+    typeof station.id === 'string' &&
+    typeof station.name === 'string' &&
+    typeof station.address === 'string' &&
+    typeof station.lat === 'number' &&
+    typeof station.lng === 'number' &&
+    typeof station.available === 'number' &&
+    typeof station.total === 'number' &&
+    typeof station.cost === 'number' &&
+    Array.isArray(station.amenities) &&
+    ['available', 'busy', 'offline'].includes(station.status)
+  )
 }
 
 export default function MapView({ stations, onStationSelect, isCharging }: MapViewProps) {
@@ -86,10 +137,15 @@ export default function MapView({ stations, onStationSelect, isCharging }: MapVi
     }
   }, [])
 
-  const filteredStations = stations.filter(station =>
-    station.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    station.address.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Sanitize search query to prevent injection
+  const sanitizedSearchQuery = sanitizeText(searchQuery).toLowerCase()
+
+  const filteredStations = stations
+    .filter(validateStation) // Only process validated stations
+    .filter(station =>
+      station.name.toLowerCase().includes(sanitizedSearchQuery) ||
+      station.address.toLowerCase().includes(sanitizedSearchQuery)
+    )
 
   // Handle station card click to center map
   const handleStationCardClick = (station: ChargingStation) => {
@@ -168,37 +224,47 @@ export default function MapView({ stations, onStationSelect, isCharging }: MapVi
           )}
 
           {/* Station markers */}
-          {stations.map((station) => (
-            <Marker
-              key={station.id}
-              position={[station.lat, station.lng]}
-              icon={createStationIcon(station.status)}
-            >
-              <Popup>
-                <div className="station-popup">
-                  <h3><strong>{station.name}</strong></h3>
-                  <p>{station.address}</p>
-                  <p><strong>Status:</strong> {station.status}</p>
-                  <p><strong>Available:</strong> {station.available}/{station.total} ports</p>
-                  <p><strong>Cost:</strong> ${station.cost}/kWh</p>
-                  <button
-                    onClick={() => onStationSelect(station)}
-                    style={{
-                      background: '#3B82F6',
-                      color: 'white',
-                      padding: '8px 16px',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      marginTop: '8px'
-                    }}
-                  >
-                    View Details
-                  </button>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+          {stations.filter(validateStation).map((station) => {
+            // Validate and sanitize all displayed data
+            const safeName = sanitizeText(station.name)
+            const safeAddress = sanitizeText(station.address)
+            const safeStatus = sanitizeText(station.status)
+            const safeAvailable = Math.max(0, Number(station.available) || 0)
+            const safeTotal = Math.max(0, Number(station.total) || 0)
+            const safeCost = Math.max(0, Number(station.cost) || 0).toFixed(2)
+
+            return (
+              <Marker
+                key={station.id}
+                position={[station.lat, station.lng]}
+                icon={createStationIcon(station.status)}
+              >
+                <Popup>
+                  <div className="station-popup">
+                    <h3><strong dangerouslySetInnerHTML={{ __html: safeName }} /></h3>
+                    <p dangerouslySetInnerHTML={{ __html: safeAddress }} />
+                    <p><strong>Status:</strong> <span dangerouslySetInnerHTML={{ __html: safeStatus }} /></p>
+                    <p><strong>Available:</strong> {safeAvailable}/{safeTotal} ports</p>
+                    <p><strong>Cost:</strong> ${safeCost}/kWh</p>
+                    <button
+                      onClick={() => onStationSelect(station)}
+                      style={{
+                        background: '#3B82F6',
+                        color: 'white',
+                        padding: '8px 16px',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        marginTop: '8px'
+                      }}
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </Popup>
+              </Marker>
+            )
+          })}
         </MapContainer>
 
         {userLocation && (
@@ -214,48 +280,60 @@ export default function MapView({ stations, onStationSelect, isCharging }: MapVi
       <div className="station-list">
         <h3 className="list-title">Nearby Charging Stations</h3>
         <div className="station-cards">
-          {filteredStations.map((station) => (
-            <div
-              key={station.id}
-              className="station-card"
-              onClick={() => handleStationCardClick(station)}
-            >
-              <div className="station-header">
-                <div>
-                  <h4 className="station-name">{station.name}</h4>
-                  <p className="station-address">{station.address}</p>
-                </div>
-                <div className="station-status">
-                  <span className={`status-badge ${getStatusColor(station.status)}`}>
-                    {getStatusText(station.status)}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="station-info">
-                <div className="availability">
-                  <span className="font-medium">{station.available}/{station.total}</span>
-                  <span className="text-sm text-gray-600">ports available</span>
-                </div>
-                <div className="cost">
-                  <span className="font-medium">${station.cost}/kWh</span>
-                </div>
-                <button className="directions-btn">
-                  <Navigation size={16} />
-                  <span>Directions</span>
-                </button>
-              </div>
+          {filteredStations.map((station) => {
+            // Sanitize all displayed data
+            const safeName = sanitizeText(station.name)
+            const safeAddress = sanitizeText(station.address)
+            const safeAvailable = Math.max(0, Number(station.available) || 0)
+            const safeTotal = Math.max(0, Number(station.total) || 0)
+            const safeCost = Math.max(0, Number(station.cost) || 0).toFixed(2)
 
-              <div className="amenities">
-                {station.amenities.slice(0, 3).map((amenity, index) => (
-                  <span key={index} className="amenity-tag">{amenity}</span>
-                ))}
-                {station.amenities.length > 3 && (
-                  <span className="amenity-tag">+{station.amenities.length - 3} more</span>
-                )}
+            return (
+              <div
+                key={station.id}
+                className="station-card"
+                onClick={() => handleStationCardClick(station)}
+              >
+                <div className="station-header">
+                  <div>
+                    <h4 className="station-name" dangerouslySetInnerHTML={{ __html: safeName }} />
+                    <p className="station-address" dangerouslySetInnerHTML={{ __html: safeAddress }} />
+                  </div>
+                  <div className="station-status">
+                    <span className={`status-badge ${getStatusColor(station.status)}`}>
+                      {getStatusText(station.status)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="station-info">
+                  <div className="availability">
+                    <span className="font-medium">{safeAvailable}/{safeTotal}</span>
+                    <span className="text-sm text-gray-600">ports available</span>
+                  </div>
+                  <div className="cost">
+                    <span className="font-medium">${safeCost}/kWh</span>
+                  </div>
+                  <button className="directions-btn">
+                    <Navigation size={16} />
+                    <span>Directions</span>
+                  </button>
+                </div>
+
+                <div className="amenities">
+                  {station.amenities.slice(0, 3).map((amenity, index) => {
+                    const safeAmenity = sanitizeText(amenity)
+                    return (
+                      <span key={index} className="amenity-tag" dangerouslySetInnerHTML={{ __html: safeAmenity }} />
+                    )
+                  })}
+                  {station.amenities.length > 3 && (
+                    <span className="amenity-tag">+{station.amenities.length - 3} more</span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>
