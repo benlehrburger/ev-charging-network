@@ -29,9 +29,10 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background-color: #f0fdf4;
+  background-color: #FFF3ED;
   border-radius: 0.5rem;
-  border: 1px solid #bbf7d0;
+  border: 1px solid #FFD4C0;
+  animation: charging-glow 2s ease-in-out infinite;
 }
 
 /* Main Content */
@@ -76,17 +77,21 @@
 }
 
 .nav-item.active {
-  color: var(--primary-blue);
-  background-color: #eff6ff;
+  color: var(--primary-orange);
+  background-color: #FFF3ED;
 }
 
 /* Utility classes for icons */
 .text-blue-600 {
-  color: var(--primary-blue);
+  color: var(--primary-orange);
+}
+
+.text-orange-600 {
+  color: var(--primary-orange);
 }
 
 .text-green-500 {
-  color: var(--secondary-green);
+  color: var(--status-available);
 }
 
 .text-green-600 {

@@ -123,13 +123,16 @@ function App() {
       <header className="header">
         <div className="header-content">
           <div className="flex items-center gap-2">
-            <Zap className="text-blue-600" size={24} />
+            <Zap className="text-orange-600" size={24} />
             <h1 className="text-xl font-bold">EVolution</h1>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginLeft: '0.5rem' }}>
+              by Claude
+            </span>
           </div>
           {isCharging && (
             <div className="charging-indicator">
-              <Battery className="text-green-500" size={20} />
-              <span className="text-sm text-green-600">Charging</span>
+              <Battery className="text-orange-600" size={20} />
+              <span className="text-sm" style={{ color: 'var(--primary-orange)' }}>Charging</span>
             </div>
           )}
         </div>

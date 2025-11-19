@@ -46,7 +46,7 @@ const createStationIcon = (status: string) => {
 
 const userIcon = L.divIcon({
   className: 'custom-marker',
-  html: `<div style="background-color: #3B82F6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+  html: `<div style="background-color: #F56B3F; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
   iconSize: [20, 20],
   iconAnchor: [10, 10],
 })
@@ -184,7 +184,7 @@ export default function MapView({ stations, onStationSelect, isCharging }: MapVi
                   <button
                     onClick={() => onStationSelect(station)}
                     style={{
-                      background: '#3B82F6',
+                      background: '#F56B3F',
                       color: 'white',
                       padding: '8px 16px',
                       border: 'none',

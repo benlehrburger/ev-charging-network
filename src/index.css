@@ -5,15 +5,27 @@
   line-height: 1.5;
   font-weight: 400;
   
-  --primary-blue: #2563eb;
-  --primary-blue-dark: #1d4ed8;
-  --secondary-green: #10b981;
-  --background: #f8fafc;
-  --surface: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --border: #e2e8f0;
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  /* Anthropic Brand Colors */
+  --primary-orange: #F56B3F;
+  --primary-orange-dark: #E5531F;
+  --primary-orange-light: #FF8A5C;
+  --secondary-amber: #FFB84D;
+  --accent-coral: #FF6B6B;
+  --background: #F9F7F4;
+  --surface: #FFFFFF;
+  --text-primary: #1F1F1F;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --border: #E8E3DC;
+  --shadow: 0 2px 8px 0 rgb(31 31 31 / 0.08), 0 1px 3px -1px rgb(31 31 31 / 0.06);
+
+  /* Status colors */
+  --status-available: #10B981;
+  --status-available-bg: #ECFDF5;
+  --status-busy: #F59E0B;
+  --status-busy-bg: #FEF3C7;
+  --status-offline: #EF4444;
+  --status-offline-bg: #FEF2F2;
   
   color: var(--text-primary);
   background-color: var(--background);
@@ -87,12 +99,12 @@ button {
 }
 
 .btn-primary {
-  background-color: var(--primary-blue);
+  background-color: var(--primary-orange);
   color: white;
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-blue-dark);
+  background-color: var(--primary-orange-dark);
 }
 
 .btn-secondary {
@@ -106,8 +118,12 @@ button {
 }
 
 .btn-success {
-  background-color: var(--secondary-green);
+  background-color: var(--status-available);
   color: white;
+}
+
+.btn-success:hover {
+  background-color: #059669;
 }
 
 /* Input styles */
@@ -124,8 +140,8 @@ input {
 
 input:focus {
   outline: none;
-  border-color: var(--primary-blue);
-  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
+  border-color: var(--primary-orange);
+  box-shadow: 0 0 0 3px rgb(245 107 63 / 0.1);
 }
 
 /* Card styles */
@@ -194,7 +210,7 @@ input:focus {
 }
 
 .charging-banner {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, var(--primary-orange), var(--primary-orange-dark));
   color: white;
   padding: 1rem;
   margin: 1rem;
@@ -297,13 +313,18 @@ input:focus {
   align-items: center;
   gap: 0.25rem;
   padding: 0.5rem 0.75rem;
-  background-color: var(--primary-blue);
+  background-color: var(--primary-orange);
   color: white;
   border: none;
   border-radius: 0.5rem;
   font-size: 0.875rem;
   cursor: pointer;
   margin-left: auto;
+  transition: all 0.2s ease;
+}
+
+.directions-btn:hover {
+  background-color: var(--primary-orange-dark);
 }
 
 .amenities {
@@ -597,7 +618,7 @@ input:focus {
 .pulse {
   width: 12px;
   height: 12px;
-  background-color: #10b981;
+  background-color: var(--primary-orange);
   border-radius: 50%;
   animation: pulse 2s infinite;
 }
@@ -606,6 +627,11 @@ input:focus {
   0% { transform: scale(0.95); opacity: 1; }
   70% { transform: scale(1); opacity: 0.7; }
   100% { transform: scale(0.95); opacity: 1; }
+}
+
+@keyframes charging-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(245, 107, 63, 0.3); }
+  50% { box-shadow: 0 0 15px rgba(245, 107, 63, 0.6); }
 }
 
 .camera-placeholder {

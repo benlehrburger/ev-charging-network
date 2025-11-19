@@ -73,7 +73,7 @@ export default function UserProfile({ onBack }: UserProfileProps) {
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-icon">
-            <Zap className="text-blue-600" size={24} />
+            <Zap className="text-orange-600" size={24} />
           </div>
           <div className="stat-info">
             <span className="stat-value">{userData.totalSessions}</span>
@@ -128,7 +128,7 @@ export default function UserProfile({ onBack }: UserProfileProps) {
                   <span>{session.duration}</span>
                 </div>
                 <div className="session-metric">
-                  <Zap size={16} className="text-blue-600" />
+                  <Zap size={16} className="text-orange-600" />
                   <span>{session.energy} kWh</span>
                 </div>
                 <div className="session-metric">
@@ -161,12 +161,30 @@ export default function UserProfile({ onBack }: UserProfileProps) {
       <div className="favorite-station">
         <h3 className="section-title">Favorite Station</h3>
         <div className="favorite-card">
-          <Zap className="text-blue-600" size={24} />
+          <Zap className="text-orange-600" size={24} />
           <div>
             <h4>{userData.favoriteStation}</h4>
             <p className="text-gray-600">Most frequently used station</p>
           </div>
         </div>
+      </div>
+
+      {/* Claude Footer */}
+      <div style={{
+        textAlign: 'center',
+        padding: '2rem 1rem',
+        marginTop: '2rem',
+        borderTop: '1px solid var(--border)',
+        color: 'var(--text-tertiary)',
+        fontSize: '0.875rem'
+      }}>
+        <p style={{ margin: '0 0 0.5rem 0' }}>
+          Powered by{' '}
+          <span style={{ color: 'var(--primary-orange)', fontWeight: '600' }}>Claude</span>
+        </p>
+        <p style={{ margin: 0, fontSize: '0.75rem' }}>
+          Your AI companion for smarter EV charging
+        </p>
       </div>
     </div>
   )

@@ -70,7 +70,7 @@ export default function StationDetails({ station, onStartCharging, onBack }: Sta
         <div className="station-metrics">
           <div className="metric-card">
             <div className="metric-icon">
-              <Zap className="text-blue-600" size={24} />
+              <Zap className="text-orange-600" size={24} />
             </div>
             <div className="metric-info">
               <span className="metric-value">{station.available}/{station.total}</span>
@@ -136,7 +136,7 @@ export default function StationDetails({ station, onStartCharging, onBack }: Sta
         <div className="additional-info">
           <div className="info-item">
             <span className="info-label">Network:</span>
-            <span className="info-value">EVolution</span>
+            <span className="info-value">EVolution by Claude</span>
           </div>
           <div className="info-item">
             <span className="info-label">Connector Type:</span>
