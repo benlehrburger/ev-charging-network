@@ -136,7 +136,7 @@ export default function StationDetails({ station, onStartCharging, onBack }: Sta
         <div className="additional-info">
           <div className="info-item">
             <span className="info-label">Network:</span>
-            <span className="info-value">EVolution by Claude</span>
+            <span className="info-value">Claude Charge</span>
           </div>
           <div className="info-item">
             <span className="info-label">Connector Type:</span>

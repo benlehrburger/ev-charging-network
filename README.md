@@ -1,11 +1,11 @@
-# EVolution - EV Charging Station Finder
+# Claude Charge - EV Charging Station Finder
 
-A modern React-based mobile application for finding and managing electric vehicle charging stations. Built with TypeScript, Vite, and Mapbox for interactive mapping.
+A modern React-based mobile application for finding and managing electric vehicle charging stations. Built with TypeScript, Vite, and Leaflet with OpenStreetMap for interactive mapping.
 
 ## Features
 
 ### 🗺️ Interactive Map
-- **Mapbox Integration**: Real-time interactive map with smooth navigation
+- **Leaflet + OpenStreetMap**: Real-time interactive map with smooth navigation (no API key required)
 - **Station Markers**: Color-coded markers showing station availability
   - 🟢 Green: Available stations
   - 🟠 Orange: Busy stations
@@ -37,7 +37,7 @@ A modern React-based mobile application for finding and managing electric vehicl
 
 - **Frontend**: React 19 + TypeScript
 - **Build Tool**: Vite 7
-- **Mapping**: Mapbox GL JS
+- **Mapping**: Leaflet + OpenStreetMap
 - **Icons**: Lucide React
 - **Camera**: React Webcam
 - **QR Scanning**: jsQR
@@ -47,7 +47,6 @@ A modern React-based mobile application for finding and managing electric vehicl
 ### Prerequisites
 - Node.js 20.19+ or 22.12+
 - npm or yarn
-- Mapbox account (free tier available)
 
 ### Installation
 
@@ -62,19 +61,12 @@ A modern React-based mobile application for finding and managing electric vehicl
    npm install
    ```
 
-3. **Set up environment variables**
-   - Get a free Mapbox access token from [https://account.mapbox.com/](https://account.mapbox.com/)
-   - Copy the token and add it to your `.env` file:
-   ```bash
-   VITE_MAPBOX_ACCESS_TOKEN=your_mapbox_access_token_here
-   ```
-
-4. **Start the development server**
+3. **Start the development server**
    ```bash
    npm run dev
    ```
 
-5. **Open your browser**
+4. **Open your browser**
    - Navigate to `http://localhost:5173`
    - Allow location access for the best experience
 
@@ -83,7 +75,7 @@ A modern React-based mobile application for finding and managing electric vehicl
 ```
 src/
 ├── components/
-│   ├── MapView.tsx          # Interactive Mapbox map component
+│   ├── MapView.tsx          # Interactive Leaflet map component
 │   ├── StationDetails.tsx   # Station information and booking
 │   ├── QRScanner.tsx        # QR code scanning functionality
 │   └── UserProfile.tsx      # User dashboard and statistics
@@ -98,12 +90,7 @@ src/
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
-
-## Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `VITE_MAPBOX_ACCESS_TOKEN` | Mapbox API key for map functionality | Yes |
+- `npm run test` - Run tests
 
 ## Contributing
 
