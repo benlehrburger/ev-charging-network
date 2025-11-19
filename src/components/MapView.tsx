@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
-import { MapPin, Navigation, Zap } from 'lucide-react'
-import mapboxgl from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import { useState, useEffect } from 'react'
+import { Navigation, Zap } from 'lucide-react'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
 interface ChargingStation {
   id: string
@@ -22,31 +23,49 @@ interface MapViewProps {
   isCharging: boolean
 }
 
+// Fix Leaflet marker icon issue
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+})
+
+// Custom icons for different station statuses
+const createStationIcon = (status: string) => {
+  const color = status === 'available' ? '#10B981' :
+                status === 'busy' ? '#F59E0B' : '#EF4444'
+
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+  })
+}
+
+const userIcon = L.divIcon({
+  className: 'custom-marker',
+  html: `<div style="background-color: #3B82F6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+})
+
+// Component to handle map centering
+function MapController({ center }: { center: [number, number] }) {
+  const map = useMap()
+  useEffect(() => {
+    map.flyTo(center, 13)
+  }, [center, map])
+  return null
+}
+
 export default function MapView({ stations, onStationSelect, isCharging }: MapViewProps) {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const mapContainer = useRef<HTMLDivElement>(null)
-  const map = useRef<mapboxgl.Map | null>(null)
-  const markersRef = useRef<mapboxgl.Marker[]>([])
-  const userMarkerRef = useRef<mapboxgl.Marker | null>(null)
-
-  // Set your Mapbox access token from environment variables
-  mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || ''
+  const [mapCenter, setMapCenter] = useState<[number, number]>([25.78, -80.1918]) // Miami: [lat, lng]
 
   useEffect(() => {
-    // Initialize map
-    if (mapContainer.current && !map.current) {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: [-80.1918, 25.7617], // Miami coordinates
-        zoom: 11
-      })
-
-      // Add navigation controls
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
-    }
-
     // Get user's current location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -56,14 +75,7 @@ export default function MapView({ stations, onStationSelect, isCharging }: MapVi
             lng: position.coords.longitude
           }
           setUserLocation(location)
-          
-          // Center map on user location
-          if (map.current) {
-            map.current.flyTo({
-              center: [location.lng, location.lat],
-              zoom: 13
-            })
-          }
+          setMapCenter([location.lat, location.lng]) // Leaflet uses [lat, lng] order
         },
         (error) => {
           console.log('Location access denied:', error)
@@ -72,96 +84,7 @@ export default function MapView({ stations, onStationSelect, isCharging }: MapVi
         }
       )
     }
-
-    // Cleanup
-    return () => {
-      if (map.current) {
-        map.current.remove()
-        map.current = null
-      }
-    }
   }, [])
-
-  // Add user location marker
-  useEffect(() => {
-    if (map.current && userLocation) {
-      // Remove existing user marker
-      if (userMarkerRef.current) {
-        userMarkerRef.current.remove()
-      }
-
-      // Create user location marker
-      const userMarker = new mapboxgl.Marker({
-        color: '#3B82F6' // Blue color
-      })
-        .setLngLat([userLocation.lng, userLocation.lat])
-        .setPopup(
-          new mapboxgl.Popup({ offset: 25 })
-            .setHTML('<div><strong>Your Location</strong></div>')
-        )
-        .addTo(map.current)
-
-      userMarkerRef.current = userMarker
-    }
-  }, [userLocation])
-
-  // Add charging station markers
-  useEffect(() => {
-    if (map.current && stations.length > 0) {
-      // Clear existing markers
-      markersRef.current.forEach(marker => marker.remove())
-      markersRef.current = []
-
-      // Add station markers
-      stations.forEach(station => {
-        const markerColor = station.status === 'available' ? '#10B981' : 
-                           station.status === 'busy' ? '#F59E0B' : '#EF4444'
-
-        const marker = new mapboxgl.Marker({
-          color: markerColor
-        })
-          .setLngLat([station.lng, station.lat])
-          .setPopup(
-            new mapboxgl.Popup({ offset: 25 })
-              .setHTML(`
-                <div class="station-popup">
-                  <h3><strong>${station.name}</strong></h3>
-                  <p>${station.address}</p>
-                  <p><strong>Status:</strong> ${station.status}</p>
-                  <p><strong>Available:</strong> ${station.available}/${station.total} ports</p>
-                  <p><strong>Cost:</strong> $${station.cost}/kWh</p>
-                  <button onclick="window.selectStation('${station.id}')" 
-                          style="background: #3B82F6; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-top: 8px;">
-                    View Details
-                  </button>
-                </div>
-              `)
-          )
-          .addTo(map.current!)
-
-        markersRef.current.push(marker)
-      })
-    }
-  }, [stations])
-
-  // Global function to handle station selection from popup
-  useEffect(() => {
-    interface WindowWithSelectStation extends Window {
-      selectStation?: (stationId: string) => void
-    }
-    
-    const windowWithSelectStation = window as WindowWithSelectStation
-    windowWithSelectStation.selectStation = (stationId: string) => {
-      const station = stations.find(s => s.id === stationId)
-      if (station) {
-        onStationSelect(station)
-      }
-    }
-
-    return () => {
-      delete windowWithSelectStation.selectStation
-    }
-  }, [stations, onStationSelect])
 
   const filteredStations = stations.filter(station =>
     station.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -170,12 +93,7 @@ export default function MapView({ stations, onStationSelect, isCharging }: MapVi
 
   // Handle station card click to center map
   const handleStationCardClick = (station: ChargingStation) => {
-    if (map.current) {
-      map.current.flyTo({
-        center: [station.lng, station.lat],
-        zoom: 15
-      })
-    }
+    setMapCenter([station.lat, station.lng]) // Leaflet uses [lat, lng] order
     onStationSelect(station)
   }
 
@@ -223,28 +141,70 @@ export default function MapView({ stations, onStationSelect, isCharging }: MapVi
         </div>
       )}
 
-      {/* Interactive Mapbox Map */}
+      {/* Interactive Leaflet Map with OpenStreetMap */}
       <div className="map-container">
-        <div ref={mapContainer} className="mapbox-map" />
-        {mapboxgl.accessToken && mapboxgl.accessToken !== 'your_mapbox_access_token_here' && (
+        <MapContainer
+          center={[26.5, -80.1918]}
+          zoom={10}
+          style={{ height: '100%', width: '100%' }}
+          className="leaflet-map"
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+
+          <MapController center={mapCenter} />
+
+          {/* User location marker */}
+          {userLocation && (
+            <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
+              <Popup>
+                <div>
+                  <strong>Your Location</strong>
+                </div>
+              </Popup>
+            </Marker>
+          )}
+
+          {/* Station markers */}
+          {stations.map((station) => (
+            <Marker
+              key={station.id}
+              position={[station.lat, station.lng]}
+              icon={createStationIcon(station.status)}
+            >
+              <Popup>
+                <div className="station-popup">
+                  <h3><strong>{station.name}</strong></h3>
+                  <p>{station.address}</p>
+                  <p><strong>Status:</strong> {station.status}</p>
+                  <p><strong>Available:</strong> {station.available}/{station.total} ports</p>
+                  <p><strong>Cost:</strong> ${station.cost}/kWh</p>
+                  <button
+                    onClick={() => onStationSelect(station)}
+                    style={{
+                      background: '#3B82F6',
+                      color: 'white',
+                      padding: '8px 16px',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      marginTop: '8px'
+                    }}
+                  >
+                    View Details
+                  </button>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+
+        {userLocation && (
           <div className="map-overlay">
             <p className="text-sm text-gray-600">
-              {userLocation ? 
-                `Your location: ${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)}` :
-                'Getting your location...'
-              }
-            </p>
-          </div>
-        )}
-        {(!mapboxgl.accessToken || mapboxgl.accessToken === 'your_mapbox_access_token_here') && (
-          <div className="map-token-warning">
-            <MapPin className="text-orange-500" size={48} />
-            <p className="text-orange-600 font-medium">Mapbox Token Required</p>
-            <p className="text-sm text-gray-600">
-              Please add your Mapbox access token to the .env file
-            </p>
-            <p className="text-xs text-gray-500">
-              Get one free at https://account.mapbox.com/
+              Your location: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
             </p>
           </div>
         )}
